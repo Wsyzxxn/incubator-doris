@@ -907,7 +907,7 @@ public class OlapTable extends Table {
             }
         }
 
-        if (Catalog.getCurrentCatalogJournalVersion() >= FeMetaVersion.VERSION_57) {
+        if (Catalog.getCurrentCatalogJournalVersion() >= FeMetaVersion.VERSION_58) {
             baseIndexId = in.readLong();
         } else {
             // the old table use table id as base index id

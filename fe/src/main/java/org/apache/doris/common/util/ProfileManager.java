@@ -59,10 +59,11 @@ public class ProfileManager {
     public static final String SQL_STATEMENT = "Sql Statement";
     public static final String USER = "User";
     public static final String DEFAULT_DB = "Default Db";
-    
+    public static final String IS_CACHED = "IS Cached";
+
     public static final ArrayList<String> PROFILE_HEADERS = new ArrayList(
             Arrays.asList(QUERY_ID, USER, DEFAULT_DB, SQL_STATEMENT, QUERY_TYPE,
-                    START_TIME, END_TIME, TOTAL_TIME, QUERY_STATE));
+                    START_TIME, END_TIME, TOTAL_TIME, QUERY_STATE, IS_CACHED));
     
     private class ProfileElement {
         public Map<String, String> infoStrings = Maps.newHashMap();  

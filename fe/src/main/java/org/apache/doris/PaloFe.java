@@ -17,6 +17,7 @@
 
 package org.apache.doris;
 
+import org.apache.doris.cache.CacheFactory;
 import org.apache.doris.catalog.Catalog;
 import org.apache.doris.common.CommandLineOptions;
 import org.apache.doris.common.Config;
@@ -86,6 +87,12 @@ public class PaloFe {
             // init catalog and wait it be ready
             Catalog.getInstance().initialize(args);
             Catalog.getInstance().waitForReady();
+
+            // Initialize the result cache if enabled
+            LOG.debug("result cache is " + (Config.enable_result_cache ? "enabled" : "disabled"));
+            if (Config.enable_result_cache) {
+                CacheFactory.getUniversalCache();
+            }
 
             // init and start:
             // 1. QeService for MySQL Server

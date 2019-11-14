@@ -17,6 +17,7 @@
 
 package org.apache.doris.rewrite;
 
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.doris.analysis.DateLiteral;
 import org.apache.doris.analysis.DecimalLiteral;
 import org.apache.doris.analysis.FloatLiteral;
@@ -35,6 +36,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Date;
 
 /**
  * compute functions in FE.
@@ -147,6 +149,11 @@ public class FEFunctions {
         }
         DateLiteral dl = new DateLiteral(unixTime.getLongValue() * 1000, TimeUtils.getTimeZone(), Type.DATETIME);
         return new StringLiteral(dl.dateFormat(fmtLiteral.getStringValue()));
+    }
+
+    @FEFunction(name = "now", argTypes = {}, returnType = "DATETIME")
+    public static DateLiteral now() throws AnalysisException {
+        return new DateLiteral(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"), Type.DATETIME);
     }
 
     /**

@@ -20,9 +20,12 @@ package org.apache.doris.qe;
 import org.apache.doris.proto.PQueryStatistics;
 import org.apache.doris.thrift.TResultBatch;
 
-public final class RowBatch {
+import java.io.Serializable;
+
+public final class RowBatch implements Serializable {
     private TResultBatch batch;
-    private PQueryStatistics statistics;
+    //transient for cache 
+    private transient PQueryStatistics statistics;
     private boolean eos;
 
     public RowBatch() {

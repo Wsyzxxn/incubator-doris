@@ -36,6 +36,8 @@ import org.apache.doris.analysis.StatementBase;
 import org.apache.doris.analysis.StmtRewriter;
 import org.apache.doris.analysis.UnsupportedStmt;
 import org.apache.doris.analysis.UseStmt;
+import org.apache.doris.cache.Cache;
+import org.apache.doris.cache.CacheFactory;
 import org.apache.doris.catalog.Catalog;
 import org.apache.doris.catalog.Column;
 import org.apache.doris.catalog.Database;
@@ -54,6 +56,7 @@ import org.apache.doris.common.Version;
 import org.apache.doris.common.util.DebugUtil;
 import org.apache.doris.common.util.ProfileManager;
 import org.apache.doris.common.util.RuntimeProfile;
+import org.apache.doris.common.util.StringUtils;
 import org.apache.doris.common.util.TimeUtils;
 import org.apache.doris.load.EtlJobType;
 import org.apache.doris.mysql.MysqlChannel;
@@ -76,6 +79,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.apache.commons.lang.SerializationUtils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -83,10 +87,14 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.apache.doris.cache.Cache.NamedKey;
 
 // Do one COM_QEURY process.
 // first: Parse receive byte array to statement struct.
@@ -110,6 +118,7 @@ public class StmtExecutor {
     private boolean isProxy;
     private ShowResultSet proxyResultSet = null;
     private PQueryStatistics statisticsForAuditLog;
+    private boolean isCached;
 
     public StmtExecutor(ConnectContext context, String stmt, boolean isProxy) {
         this.context = context;
@@ -140,6 +149,8 @@ public class StmtExecutor {
         summaryProfile.addInfoString(ProfileManager.USER, context.getQualifiedUser());
         summaryProfile.addInfoString(ProfileManager.DEFAULT_DB, context.getDatabase());
         summaryProfile.addInfoString(ProfileManager.SQL_STATEMENT, originStmt);
+        // Add additional information to query profile summary
+        summaryProfile.addInfoString(ProfileManager.IS_CACHED, isCached ? "Yes" : "No");
         profile.addChild(summaryProfile);
         if (coord != null) {
             coord.getQueryProfile().getCounterTotalTime().setValue(TimeUtils.getEstimatedTime(beginTimeInNanoSecond));
@@ -223,8 +234,7 @@ public class StmtExecutor {
                 int retryTime = Config.max_query_retry_time;
                 for (int i = 0; i < retryTime; i ++) {
                     try {
-                        handleQueryStmt();
-                        if (context.getSessionVariable().isReportSucc()) {
+                        if (!handleQueryStmt() && context.getSessionVariable().isReportSucc()) {
                             writeProfile(beginTimeInNanoSecond);
                         }
                         break;
@@ -527,10 +537,14 @@ public class StmtExecutor {
     }
 
     // Process a select statement.
-    private void handleQueryStmt() throws Exception {
+    private boolean handleQueryStmt() throws Exception {
         // Every time set no send flag and clean all data in buffer
         context.getMysqlChannel().reset();
         QueryStmt queryStmt = (QueryStmt) parsedStmt;
+        // Use connection ID as session identifier
+        NamedKey namedKey = new NamedKey(String.valueOf(context.getConnectionId()),
+        StringUtils.toUtf8(queryStmt.toSql()));
+        LOG.debug("Result Cache NamedKey [" + namedKey + "]");
 
         // assign query id before explain query return
         UUID uuid = UUID.randomUUID();
@@ -539,14 +553,33 @@ public class StmtExecutor {
         if (queryStmt.isExplain()) {
             String explainString = planner.getExplainString(planner.getFragments(), TExplainLevel.VERBOSE);
             handleExplainStmt(explainString);
-            return;
+            return false;
         }
         coord = new Coordinator(context, analyzer, planner);
 
-        QeProcessorImpl.INSTANCE.registerQuery(context.queryId(), 
-                       new QeProcessorImpl.QueryInfo(context, originStmt, coord));
+        QeProcessorImpl.INSTANCE.registerQuery(context.queryId(),
+                new QeProcessorImpl.QueryInfo(context, originStmt, coord));
 
-        coord.exec();
+        boolean isCacheEnabled = context.getSessionVariable().isEnableResultCache();
+        LOG.debug("Session level cache is " + (isCacheEnabled ? "enabled" : false));
+        Cache cache = null;
+        byte[] cachedVal = null;
+        ArrayList<RowBatch> batches = null;
+        if (isCacheEnabled){
+            cache = CacheFactory.getUniversalCache();
+            cachedVal = cache.get(namedKey);
+        }
+
+        isCached = (cachedVal != null);
+        if (isCached) {
+            batches = (ArrayList<RowBatch>) SerializationUtils.deserialize(cachedVal);
+        } else {
+            coord.exec();
+            if (isCacheEnabled) {
+                // List is not serializable but ArrayList is.
+                batches = new ArrayList<>();
+            }
+        }
 
         // if python's MysqlDb get error after sendfields, it can't catch the excpetion
         // so We need to send fields after first batch arrived
@@ -555,8 +588,22 @@ public class StmtExecutor {
         RowBatch batch;
         MysqlChannel channel = context.getMysqlChannel();
         sendFields(queryStmt.getColLabels(), queryStmt.getResultExprs());
+        Iterator<RowBatch> itr = (isCached) ? batches.iterator() : null;
+        if (isCached && itr == null) {
+            isCached = false;
+            LOG.info("do not get batches from SerializationUtils");
+        }
         while (true) {
-            batch = coord.getNext();
+            if (isCached) {
+                //  Theoretically, the batch must have next before gets into eof.
+                //  Otherwise, it is corrupted result.
+                batch = itr.next();
+            } else {
+                batch = coord.getNext();
+                if (isCacheEnabled) {
+                    batches.add(batch);
+                }
+            }
             if (batch.getBatch() != null) {
                 for (ByteBuffer row : batch.getBatch().getRows()) {
                     channel.sendOnePacket(row);
@@ -567,9 +614,15 @@ public class StmtExecutor {
                 break;
             }
         }
+        if (cachedVal == null && isCacheEnabled) {
+            cachedVal = SerializationUtils.serialize(batches);
+            cache.put(namedKey, cachedVal);
+            LOG.debug("Put into cache with named key: " + namedKey);
+        }
 
         statisticsForAuditLog = batch.getQueryStatistics();
         context.getState().setEof();
+        return isCached;
     }
 
     // Process a select statement.

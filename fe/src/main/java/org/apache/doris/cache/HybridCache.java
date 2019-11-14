@@ -15,29 +15,42 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.doris.metric;
+package org.apache.doris.cache;
 
-/*
- * Gauge metric is updated every time it is visited
+import java.io.IOException;
+import java.util.Map;
+
+/**
+ * TODO Felix: Implement a hybrid cache with multiple-level cache support.
  */
-public class GaugeMetric<T> extends Metric<T> {
-    /**
-     * Construct an instance with specified name and description
-     * @param name
-     * @param description
-     * @return
-     */
-    public <T> GaugeMetric(String name, String description) {
-        super(name, MetricType.GAUGE, description);
-    }
-    private T value;
-
-    public void setValue(T v) {
-        this.value = v;
+public class HybridCache implements Cache {
+    @Override
+    public byte[] get(NamedKey key) {
+        return new byte[0];
     }
 
     @Override
-    public T getValue() {
-        return value;
+    public void put(NamedKey key, byte[] value) {
+
+    }
+
+    @Override
+    public Map<NamedKey, byte[]> getBulk(Iterable<NamedKey> keys) {
+        return null;
+    }
+
+    @Override
+    public boolean isLocal() {
+        return false;
+    }
+
+    @Override
+    public void close() throws IOException {
+
+    }
+
+    @Override
+    public CacheStats getStats() {
+        return null;
     }
 }

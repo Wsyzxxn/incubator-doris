@@ -73,7 +73,7 @@ class KafkaDataConsumerGroup : public DataConsumerGroup {
 public:
     KafkaDataConsumerGroup():
         DataConsumerGroup(),
-        _queue(500) {}
+        _queue(50) {}
 
     virtual ~KafkaDataConsumerGroup();
 

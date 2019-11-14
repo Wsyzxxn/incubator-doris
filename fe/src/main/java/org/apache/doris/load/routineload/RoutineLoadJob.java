@@ -205,8 +205,8 @@ public abstract class RoutineLoadJob extends AbstractTxnStateChangeCallback impl
     protected ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
     // TODO(ml): error sample
 
-    // save the latest 3 error log urls
-    private Queue<String> errorLogUrls = EvictingQueue.create(3);
+    // save the latest 30 error log urls (because of ttt)
+    private Queue<String> errorLogUrls = EvictingQueue.create(30);
 
     protected boolean isTypeRead = false;
 

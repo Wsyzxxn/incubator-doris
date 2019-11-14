@@ -15,29 +15,40 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.doris.metric;
 
-/*
- * Gauge metric is updated every time it is visited
- */
-public class GaugeMetric<T> extends Metric<T> {
-    /**
-     * Construct an instance with specified name and description
-     * @param name
-     * @param description
-     * @return
-     */
-    public <T> GaugeMetric(String name, String description) {
-        super(name, MetricType.GAUGE, description);
-    }
-    private T value;
 
-    public void setValue(T v) {
-        this.value = v;
-    }
+package org.apache.doris.cache;
 
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.LinkedBlockingQueue;
+
+public enum CacheExecutorFactory {
+  COMMON_FJP {
     @Override
-    public T getValue() {
-        return value;
+    public Executor createExecutor()
+    {
+      return ForkJoinPool.commonPool();
     }
+  },
+  SINGLE_THREAD {
+    @Override
+    public Executor createExecutor()
+    {
+      return new ThreadPoolExecutor(1, 1,
+              0L, TimeUnit.MILLISECONDS,
+              new LinkedBlockingQueue<Runnable>()){
+        @Override
+        protected void finalize(){
+          this.shutdown();
+        }
+      };
+    }
+  };
+
+  public abstract Executor createExecutor();
+
 }

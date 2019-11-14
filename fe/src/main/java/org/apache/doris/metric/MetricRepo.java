@@ -69,13 +69,22 @@ public final class MetricRepo {
     public static LongCounterMetric COUNTER_ROUTINE_LOAD_RECEIVED_BYTES;
     public static LongCounterMetric COUNTER_ROUTINE_LOAD_ERROR_ROWS;
 
+    // Metrics for the result cache
+    public static LongCounterMetric COUNTER_RESULT_CACHE_HITS;
+    public static LongCounterMetric COUNTER_RESULT_CACHE_MISSES;
+    public static GaugeMetric<Long> GAUGE_RESULT_CACHE_ENTRIES;
+    public static GaugeMetric<Long> GAUGE_RESULT_CACHE_SIZE_IN_BYTES;
+    public static LongCounterMetric COUNTER_RESULT_CACHE_EVICTIONS;
+    public static LongCounterMetric COUNTER_RESULT_CACHE_TIMEOUTS;
+    public static LongCounterMetric COUNTER_RESULT_CACHE_ERRORS;
+
     public static Histogram HISTO_QUERY_LATENCY;
     public static Histogram HISTO_EDIT_LOG_WRITE_LATENCY;
 
     // following metrics will be updated by metric calculator
-    public static GaugeMetricImpl<Double> GAUGE_QUERY_PER_SECOND;
-    public static GaugeMetricImpl<Double> GAUGE_REQUEST_PER_SECOND;
-    public static GaugeMetricImpl<Double> GAUGE_QUERY_ERR_RATE;
+    public static GaugeMetric<Double> GAUGE_QUERY_PER_SECOND;
+    public static GaugeMetric<Double> GAUGE_REQUEST_PER_SECOND;
+    public static GaugeMetric<Double> GAUGE_QUERY_ERR_RATE;
 
     private static Timer metricTimer = new Timer();
     private static MetricCalculator metricCalculator = new MetricCalculator();
@@ -176,13 +185,13 @@ public final class MetricRepo {
 
         // qps, rps and error rate
         // these metrics should be set an init value, in case that metric calculator is not running
-        GAUGE_QUERY_PER_SECOND = new GaugeMetricImpl<>("qps", "query per second");
+        GAUGE_QUERY_PER_SECOND = new GaugeMetric<>("qps", "query per second");
         GAUGE_QUERY_PER_SECOND.setValue(0.0);
         PALO_METRIC_REGISTER.addPaloMetrics(GAUGE_QUERY_PER_SECOND);
-        GAUGE_REQUEST_PER_SECOND = new GaugeMetricImpl<>("rps", "request per second");
+        GAUGE_REQUEST_PER_SECOND = new GaugeMetric<>("rps", "request per second");
         GAUGE_REQUEST_PER_SECOND.setValue(0.0);
         PALO_METRIC_REGISTER.addPaloMetrics(GAUGE_REQUEST_PER_SECOND);
-        GAUGE_QUERY_ERR_RATE = new GaugeMetricImpl<>("query_err_rate", "query_error_rate");
+        GAUGE_QUERY_ERR_RATE = new GaugeMetric<>("query_err_rate", "query_error_rate");
         PALO_METRIC_REGISTER.addPaloMetrics(GAUGE_QUERY_ERR_RATE);
         GAUGE_QUERY_ERR_RATE.setValue(0.0);
 
@@ -226,6 +235,20 @@ public final class MetricRepo {
         COUNTER_ROUTINE_LOAD_ERROR_ROWS = new LongCounterMetric("routine_load_error_rows",
                 "total error rows of routine load");
         PALO_METRIC_REGISTER.addPaloMetrics(COUNTER_ROUTINE_LOAD_ERROR_ROWS);
+        COUNTER_RESULT_CACHE_HITS = new LongCounterMetric("result_cache_hits", "Accumulated number of cache hits");
+        PALO_METRIC_REGISTER.addPaloMetrics(COUNTER_RESULT_CACHE_HITS);
+        COUNTER_RESULT_CACHE_MISSES = new LongCounterMetric("result_cache_misses", "Accumulated number of cache misses");
+        PALO_METRIC_REGISTER.addPaloMetrics(COUNTER_RESULT_CACHE_MISSES);
+        GAUGE_RESULT_CACHE_ENTRIES = new GaugeMetric("result_cache_entries", "Accumulated number of cache size by entries");
+        PALO_METRIC_REGISTER.addPaloMetrics(GAUGE_RESULT_CACHE_ENTRIES);
+        GAUGE_RESULT_CACHE_SIZE_IN_BYTES = new GaugeMetric("result_cache_size_in_bytes", "Accumulated number of cache size by bytes");
+        PALO_METRIC_REGISTER.addPaloMetrics(GAUGE_RESULT_CACHE_SIZE_IN_BYTES);
+        COUNTER_RESULT_CACHE_EVICTIONS = new LongCounterMetric("result_cache_evictions", "Accumulated number of cache evictions");
+        PALO_METRIC_REGISTER.addPaloMetrics(COUNTER_RESULT_CACHE_EVICTIONS);
+        COUNTER_RESULT_CACHE_TIMEOUTS = new LongCounterMetric("result_cache_timeouts", "Accumulated number of cache timeouts");
+        PALO_METRIC_REGISTER.addPaloMetrics(COUNTER_RESULT_CACHE_TIMEOUTS);
+        COUNTER_RESULT_CACHE_ERRORS= new LongCounterMetric("result_cache_errors", "Accumulated number of cache errors");
+        PALO_METRIC_REGISTER.addPaloMetrics(COUNTER_RESULT_CACHE_ERRORS);
 
         // 3. histogram
         HISTO_QUERY_LATENCY = METRIC_REGISTER.histogram(MetricRegistry.name("query", "latency", "ms"));

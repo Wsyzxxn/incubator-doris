@@ -122,8 +122,9 @@ public final class FeMetaVersion {
     public static final int VERSION_55 = 55;
     // persist auth info in load job
     public static final int VERSION_56 = 56;
-    // for base index using different id
+    // add cache
     public static final int VERSION_57 = 57;
+    // for base index using different id
     // broker load support function, persist origin stmt in broker load
     public static final int VERSION_58 = 58;
     // support strict mode in routine load and stream load

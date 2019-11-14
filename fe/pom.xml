@@ -536,6 +536,12 @@ under the License.
             <artifactId>oshi-core</artifactId>
             <version>4.0.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>2.6.2</version>
+        </dependency>
     </dependencies>
 
     <build>

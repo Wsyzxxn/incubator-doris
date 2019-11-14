@@ -15,22 +15,42 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.doris.metric;
+package org.apache.doris.cache;
 
-public class GaugeMetricImpl<T> extends GaugeMetric<T> {
+import java.io.IOException;
+import java.util.Map;
 
-    public GaugeMetricImpl(String name, String description) {
-        super(name, description);
-    }
-
-    private T value;
-
-    public void setValue(T v) {
-        this.value = v;
+/**
+ * TODO Felix: implement a global one with JimDB
+ */
+public class GlobalCache implements Cache{
+    @Override
+    public byte[] get(NamedKey key) {
+        return new byte[0];
     }
 
     @Override
-    public T getValue() {
-        return value;
+    public void put(NamedKey key, byte[] value) {
+
+    }
+
+    @Override
+    public Map<NamedKey, byte[]> getBulk(Iterable<NamedKey> keys) {
+        return null;
+    }
+
+    @Override
+    public CacheStats getStats() {
+        return null;
+    }
+
+    @Override
+    public boolean isLocal() {
+        return false;
+    }
+
+    @Override
+    public void close() throws IOException {
+
     }
 }

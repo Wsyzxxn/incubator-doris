@@ -69,6 +69,7 @@ public class SessionVariable implements Serializable, Writable {
     public static final String DISABLE_COLOCATE_JOIN = "disable_colocate_join";
     public static final String PARALLEL_FRAGMENT_EXEC_INSTANCE_NUM = "parallel_fragment_exec_instance_num";
     public static final String ENABLE_INSERT_STRICT = "enable_insert_strict";
+    public static final String ENABLE_RESULT_CACHE = "enable_result_cache";
     public static final int MIN_EXEC_INSTANCE_NUM = 1;
     public static final int MAX_EXEC_INSTANCE_NUM = 32;
     // if set to true, some of stmt will be forwarded to master FE to get result
@@ -193,6 +194,9 @@ public class SessionVariable implements Serializable, Writable {
 
     @VariableMgr.VarAttr(name = ENABLE_INSERT_STRICT)
     private boolean enableInsertStrict = false;
+
+    @VariableMgr.VarAttr(name = ENABLE_RESULT_CACHE)
+    private boolean enableResultCache = false;
 
     @VariableMgr.VarAttr(name = FORWARD_TO_MASTER)
     private boolean forwardToMaster = false;
@@ -450,8 +454,24 @@ public class SessionVariable implements Serializable, Writable {
     public boolean getEnableInsertStrict() { return enableInsertStrict; }
     public void setEnableInsertStrict(boolean enableInsertStrict) { this.enableInsertStrict = enableInsertStrict; }
 
+    /**
+     *
+     * Check if the result cache is enabled for this session. True by default.
+     * @return True for cached-enabled, otherwise false.
+     */
+    public boolean isEnableResultCache() {
+        return enableResultCache;
+    }
 
-   // Serialize to thrift object
+    /**
+     * Turn on/off result cache for this session.
+     * @param resultCacheEnabledInSession
+     */
+    public void setEnableResultCache(boolean resultCacheEnabledInSession) {
+        this.enableResultCache = resultCacheEnabledInSession;
+    }
+
+    // Serialize to thrift object
     public boolean getForwardToMaster() {
         return forwardToMaster;
     }
@@ -513,6 +533,7 @@ public class SessionVariable implements Serializable, Writable {
         out.writeInt(batchSize);
         out.writeBoolean(disableStreamPreaggregations);
         out.writeInt(parallelExecInstanceNum);
+        out.writeBoolean(enableResultCache);
         out.writeInt(exchangeInstanceParallel);
     }
 
@@ -551,6 +572,9 @@ public class SessionVariable implements Serializable, Writable {
             batchSize = in.readInt();
             disableStreamPreaggregations = in.readBoolean();
             parallelExecInstanceNum = in.readInt();
+        }
+        if (Catalog.getCurrentCatalogJournalVersion() >= FeMetaVersion.VERSION_57) {
+            enableResultCache = in.readBoolean();
         }
         if (Catalog.getCurrentCatalogJournalVersion() >= FeMetaVersion.VERSION_62) {
             exchangeInstanceParallel = in.readInt();

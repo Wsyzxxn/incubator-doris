@@ -68,7 +68,7 @@
             
             file_type: 
 
-            Used to specify the type of imported file, such as parquet, csv. Default values are determined by the file suffix name. 
+            Used to specify the type of imported file, such as parquet, orc, csv. Default values are determined by the file suffix name. 
  
             column_list: 
 

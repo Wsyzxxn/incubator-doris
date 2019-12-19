@@ -228,6 +228,9 @@ set_target_properties(jsoncpp PROPERTIES IMPORTED_LOCATION ${THIRDPARTY_DIR}/lib
 add_library(avro STATIC IMPORTED)
 set_target_properties(avro PROPERTIES IMPORTED_LOCATION ${THIRDPARTY_DIR}/lib/libavrocpp_s.a)
 
+add_library(orc STATIC IMPORTED)
+set_target_properties(orc PROPERTIES IMPORTED_LOCATION ${THIRDPARTY_DIR}/lib/liborc.a)
+
 find_program(THRIFT_COMPILER thrift ${CMAKE_SOURCE_DIR}/bin)
 
 # llvm-config
@@ -538,6 +541,7 @@ set(DORIS_DEPENDENCIES
     zstd
     arrow
     parquet
+    orc
     ${WL_END_GROUP}
     jsoncpp
     avro

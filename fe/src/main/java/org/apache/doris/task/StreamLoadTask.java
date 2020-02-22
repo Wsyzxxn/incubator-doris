@@ -199,6 +199,7 @@ public class StreamLoadTask {
         strictMode = routineLoadJob.isStrictMode();
         timezone = routineLoadJob.getTimezone();
         dataType = routineLoadJob.getDataType();
+        timeout = (int) routineLoadJob.getMaxBatchIntervalS() * 2;
     }
 
     // used for stream load

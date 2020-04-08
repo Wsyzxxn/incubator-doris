@@ -488,6 +488,11 @@ namespace config {
 
     // brpc config
     CONF_Int64(brpc_max_body_size, "67108864")
+
+    // avro json schema
+    CONF_String(jdwdatafile, "${DORIS_HOME}/conf/jdwdata.json");
+    CONF_Int32(avro_bytes_src_field_index, "8");
+    CONF_Int32(avro_bytes_cur_field_index, "9");
 } // namespace config
 
 } // namespace doris

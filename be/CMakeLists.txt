@@ -225,6 +225,9 @@ set_target_properties(roaring PROPERTIES IMPORTED_LOCATION ${THIRDPARTY_DIR}/lib
 add_library(jsoncpp STATIC IMPORTED)
 set_target_properties(jsoncpp PROPERTIES IMPORTED_LOCATION ${THIRDPARTY_DIR}/lib/libjsoncpp.a)
 
+add_library(avro STATIC IMPORTED)
+set_target_properties(avro PROPERTIES IMPORTED_LOCATION ${THIRDPARTY_DIR}/lib/libavrocpp_s.a)
+
 find_program(THRIFT_COMPILER thrift ${CMAKE_SOURCE_DIR}/bin)
 
 # llvm-config
@@ -537,6 +540,7 @@ set(DORIS_DEPENDENCIES
     parquet
     ${WL_END_GROUP}
     jsoncpp
+    avro
 )
 
 if(WITH_LZO)

@@ -107,6 +107,7 @@ set(RUNTIME_FILES
     external_scan_context_mgr.cpp
     memory/system_allocator.cpp
     memory/chunk_allocator.cpp
+    routine_load/kafka_consumer_pipe.cpp
 )
 
 if (WITH_MYSQL)

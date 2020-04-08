@@ -151,10 +151,14 @@ Status KafkaDataConsumerGroup::start_all(StreamLoadContext* ctx) {
                 << ", partition: " << msg->partition()
                 << ", offset: " << msg->offset()
                 << ", len: " << msg->len();
-
-            st = kafka_pipe->append_with_line_delimiter(
-                    static_cast<const char *>(msg->payload()),
-                    static_cast<size_t>(msg->len()));
+            if (ctx->kafka_info->properties.end() !=
+                ctx->kafka_info->properties.find("data_type")) {
+                st = kafka_pipe->append_with_line_delimiter(
+                        msg->payload(), msg->len(),
+                        ctx->kafka_info->properties.find("data_type")->second);
+            } else {
+                st = kafka_pipe->append_with_line_delimiter(msg->payload(), msg->len(), "");
+            }
             if (st.ok()) {
                 left_rows--;
                 left_bytes -= msg->len();

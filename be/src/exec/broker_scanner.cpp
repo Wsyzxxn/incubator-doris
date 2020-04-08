@@ -482,12 +482,11 @@ bool BrokerScanner::line_to_src_tuple(const Slice& line) {
 
     std::vector<Slice> values;
     {
-        if("json"==_data_type){
+        if ("json" == _data_type || "avro_json" == _data_type || "avro_bytes" == _data_type) {
             split_json_line(line, &values);
-        } else{
+        } else {
             split_line(line, &values);
         }
-
     }
 
     // range of current file

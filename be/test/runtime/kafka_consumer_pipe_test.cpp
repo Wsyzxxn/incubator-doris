@@ -44,11 +44,42 @@ TEST_F(KafkaConsumerPipeTest, append_read) {
 
     std::string msg1 = "i have a dream";
     std::string msg2 = "This is from kafka";
-    
+    std::string msg3 = R"json(
+{
+    "mid":"mm",
+    "db":"kawmsidc1_report",
+    "sch":"kawmsidc1_report",
+    "tab":"ob_locate_d",
+    "opt":"UPDATE",
+    "ts":"mmm",
+    "ddl":"mmm",
+    "err":"mmm",
+    "src":{
+        "title":"i have a dream "
+    },
+    "cur":{
+        "title":"i have a dream  this if from kakfka"
+    },
+    "cus":{
+        "modified":"0",
+        "box_qty":"songenjie"
+    }
+})json"
+    std::string msg4 = R"json({"a","i have a dream"})json"
+    std::string msg5 ="i have \"\n dream";
+    msg5 = k_pipe.string_escape(msg5, true);
+
+    std::string msg6 = "i have \"\n dream";
+    msg6 = k_pipe.string_escape(msg5, false);
+
     Status st;
     st = k_pipe.append_with_line_delimiter(msg1.c_str(), msg1.length());
     ASSERT_TRUE(st.ok());
     st = k_pipe.append_with_line_delimiter(msg2.c_str(), msg2.length());
+    ASSERT_TRUE(st.ok());
+    st = k_pipe.append_with_line_delimiter(msg3.c_str(), msg3.length(), "avro_json");
+    ASSERT_TRUE(st.ok());
+    st = k_pipe.append_with_line_delimiter(msg4.c_str(), msg4.length(), "json");
     ASSERT_TRUE(st.ok());
     st = k_pipe.finish();
     ASSERT_TRUE(st.ok());
@@ -56,16 +87,41 @@ TEST_F(KafkaConsumerPipeTest, append_read) {
     char buf[1024];
     size_t data_size = 1024;
     bool eof = false;
-    st = k_pipe.read((uint8_t*) buf, &data_size, &eof);
+    st = k_pipe.read((uint8_t*)buf, &data_size, &eof);
     ASSERT_TRUE(st.ok());
-    ASSERT_EQ(data_size, msg1.length() + msg2.length() + 2); 
+    ASSERT_EQ(data_size, msg1.length() + msg2.length() + 2);
     ASSERT_EQ(eof, false);
 
     data_size = 1024;
-    st = k_pipe.read((uint8_t*) buf, &data_size, &eof);
+    st = k_pipe.read((uint8_t*)buf, &data_size, &eof);
     ASSERT_TRUE(st.ok());
-    ASSERT_EQ(data_size, 0); 
+    ASSERT_EQ(data_size, 0);
     ASSERT_EQ(eof, true);
+
+    data_size = 1024;
+    st = k_pipe.read((uint8_t*)buf, &data_size, &eof);
+    ASSERT_TRUE(st.ok());
+    ASSERT_EQ(data_size, 0);
+    ASSERT_EQ(eof, true);
+
+    data_size = 1024;
+    st = k_pipe.read((uint8_t*)buf, &data_size, &eof);
+    ASSERT_TRUE(st.ok());
+    ASSERT_EQ(data_size, 0);
+    ASSERT_EQ(eof, true);
+
+    if (msg5 == "i have \\\"\\n dream") {
+        ASSERT_TRUE(st.ok());
+    } else {
+        ASSERT_TRUE(Status::InternalError("string escape error!" + msg5));
+    }
+
+    if (msg6 == "i have \"\\n dream") {
+        ASSERT_TRUE(st.ok());
+    } else {
+        ASSERT_TRUE(Status::InternalError("string escape error!" + msg6));
+    }
+
 }
 
 }

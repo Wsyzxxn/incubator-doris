@@ -199,6 +199,7 @@ if [ ${BUILD_FE} -eq 1 ]; then
     cp -r -p ${DORIS_HOME}/fe/target/palo-fe.jar ${DORIS_OUTPUT}/fe/lib/
     cp -r -p ${DORIS_HOME}/docs/build/help-resource.zip ${DORIS_OUTPUT}/fe/lib/
     cp -r -p ${DORIS_HOME}/webroot/* ${DORIS_OUTPUT}/fe/webroot/
+    cp -r -p ${DORIS_HOME}/conf/hive-broker.conf ${DORIS_OUTPUT}/fe/conf/
 fi
 if [ ${BUILD_BE} -eq 1 ]; then
     install -d ${DORIS_OUTPUT}/be/bin ${DORIS_OUTPUT}/be/conf \
@@ -210,6 +211,7 @@ if [ ${BUILD_BE} -eq 1 ]; then
     cp -r -p ${DORIS_HOME}/be/output/lib/* ${DORIS_OUTPUT}/be/lib/
     cp -r -p ${DORIS_HOME}/be/output/udf/*.a ${DORIS_OUTPUT}/udf/lib/
     cp -r -p ${DORIS_HOME}/be/output/udf/include/* ${DORIS_OUTPUT}/udf/include/
+    cp -r -p ${DORIS_HOME}/conf/jdwdata.json ${DORIS_OUTPUT}/be/conf/
 fi
 
 echo "***************************************"

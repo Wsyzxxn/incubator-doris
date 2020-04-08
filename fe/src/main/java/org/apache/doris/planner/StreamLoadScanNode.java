@@ -136,6 +136,7 @@ public class StreamLoadScanNode extends LoadScanNode {
         params.setLine_delimiter((byte) '\n');
         params.setSrc_tuple_id(srcTupleDesc.getId().asInt());
         params.setDest_tuple_id(desc.getId().asInt());
+        params.setData_type(streamLoadTask.getDataType());
         brokerScanRange.setParams(params);
 
         brokerScanRange.setBroker_addresses(Lists.newArrayList());

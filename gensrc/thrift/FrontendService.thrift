@@ -534,6 +534,7 @@ struct TStreamLoadPutRequest {
     19: optional bool strictMode
     20: optional string timezone
     21: optional i64 execMemLimit
+    22: optional string data_type
 }
 
 struct TStreamLoadPutResult {

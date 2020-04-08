@@ -63,6 +63,7 @@ public class StreamLoadTask {
     private String timezone = TimeUtils.DEFAULT_TIME_ZONE;
     private int timeout = Config.stream_load_default_timeout_second;
     private long execMemLimit = 2 * 1024 * 1024 * 1024L; // default is 2GB
+    private String dataType;
 
     public StreamLoadTask(TUniqueId id, long txnId, TFileType fileType, TFileFormatType formatType) {
         this.id = id;
@@ -123,10 +124,20 @@ public class StreamLoadTask {
         return timeout;
     }
 
+    public String getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(String dataType) {
+        this.dataType = dataType;
+    }
+
+
     public static StreamLoadTask fromTStreamLoadPutRequest(TStreamLoadPutRequest request) throws UserException {
         StreamLoadTask streamLoadTask = new StreamLoadTask(request.getLoadId(), request.getTxnId(),
                                                            request.getFileType(), request.getFormatType());
         streamLoadTask.setOptionalFromTSLPutRequest(request);
+        streamLoadTask.setDataType(request.getData_type());
         return streamLoadTask;
     }
 
@@ -187,6 +198,7 @@ public class StreamLoadTask {
         partitions = routineLoadJob.getPartitions() == null ? null : Joiner.on(",").join(routineLoadJob.getPartitions());
         strictMode = routineLoadJob.isStrictMode();
         timezone = routineLoadJob.getTimezone();
+        dataType = routineLoadJob.getDataType();
     }
 
     // used for stream load

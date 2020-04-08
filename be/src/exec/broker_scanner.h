@@ -30,6 +30,7 @@
 #include "runtime/mem_pool.h"
 #include "util/slice.h"
 #include "util/runtime_profile.h"
+#include <json/json.h>
 
 namespace doris {
 
@@ -80,6 +81,10 @@ private:
     // Split one text line to values
     void split_line(
         const Slice& line, std::vector<Slice>* values);
+    void split_json_line(
+            const Slice& line, std::vector<Slice>* values);
+
+    char* convertToChar(Json::Value &column_value);
 
     void fill_fix_length_string(
         const Slice& value, MemPool* pool,
@@ -123,6 +128,10 @@ private:;
 
     // used to hold current StreamLoadPipe
     std::shared_ptr<StreamLoadPipe> _stream_load_pipe;
+
+    std::string _data_type;
+    std::vector<std::string>  _column_names;
+
 };
 
 }

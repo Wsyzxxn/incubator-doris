@@ -114,6 +114,7 @@ public class KafkaRoutineLoadJob extends RoutineLoadJob {
         // because the file info can be changed anytime.
         resetConvertedCustomProperties();
         convertCustomProperties();
+        setDataType(customProperties.get("data_type"));
     }
 
     private void convertCustomProperties() throws DdlException {
@@ -349,7 +350,7 @@ public class KafkaRoutineLoadJob extends RoutineLoadJob {
         kafkaRoutineLoadJob.setOptional(stmt);
         kafkaRoutineLoadJob.checkCustomProperties();
         kafkaRoutineLoadJob.checkCustomPartition();
-
+        kafkaRoutineLoadJob.setDataType(stmt.getDataType());
         return kafkaRoutineLoadJob;
     }
 

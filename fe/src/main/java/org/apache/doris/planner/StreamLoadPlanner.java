@@ -164,4 +164,8 @@ public class StreamLoadPlanner {
         // LOG.debug("stream load txn id: {}, plan: {}", streamLoadTask.getTxnId(), params);
         return params;
     }
+    // fix replan stream task dataType is null when routine load 
+    public void setDataType(String dataType) {
+        streamLoadTask.setDataType(dataType);
+    }
 }

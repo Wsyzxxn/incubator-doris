@@ -354,6 +354,9 @@ Status StreamLoadAction::_process_put(HttpRequest* http_req, StreamLoadContext* 
             return Status::InvalidArgument("Invalid mem limit format");
         }
     }
+    if(!http_req->header(HTTP_DATA_TYPE).empty()){
+        request.__set_data_type(http_req->header(HTTP_DATA_TYPE));
+    }
 
     // plan this load
     TNetworkAddress master_addr = _exec_env->master_info()->network_address;

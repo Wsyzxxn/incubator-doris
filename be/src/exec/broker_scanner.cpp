@@ -35,6 +35,7 @@
 #include "exec/broker_reader.h"
 #include "exec/decompressor.h"
 #include "util/simdutf8check.h"
+#include <boost/algorithm/string.hpp>
 
 namespace doris {
 
@@ -55,7 +56,9 @@ BrokerScanner::BrokerScanner(RuntimeState* state,
         _next_range(0),
         _cur_line_reader_eof(false),
         _scanner_eof(false),
-        _skip_next_line(false) {
+        _skip_next_line(false),
+        _data_type(params.data_type),
+        _column_names(params.column_names){
 }
 
 BrokerScanner::~BrokerScanner() {
@@ -295,7 +298,79 @@ void BrokerScanner::split_line(
     values->emplace_back(value, ptr - value);
 }
 
-void BrokerScanner::fill_fix_length_string(
+char* BrokerScanner::convertToChar(Json::Value &column_value) {
+    char *column_chars = nullptr;
+    std::stringstream ss;
+    bool is_get_success = false;
+    std::string strResult;
+    if (column_value.isBool()) {
+        bool aBool = column_value.asBool();
+        ss << aBool;
+        strResult = ss.str();
+        is_get_success = true;
+    } else if (column_value.isInt()) {
+        Json::Int asInt = column_value.asInt();
+        strResult = std::to_string(asInt);
+        is_get_success = true;
+    } else if (column_value.isInt64()) {
+        Json::Int64 asInt64 = column_value.asInt64();
+        strResult = std::to_string(asInt64);
+        is_get_success = true;
+    } else if (column_value.isDouble()) {
+        double aDouble = column_value.asDouble();
+        strResult = std::to_string(aDouble);
+        is_get_success = true;
+    } else if (column_value.isString()) {
+        const string &asString = column_value.asString();
+        strResult = asString;
+        is_get_success = true;
+    }else if (column_value.isNull()) {
+        const string asString = "";
+        strResult = asString;
+        is_get_success = true;
+    }
+    if (is_get_success) {
+        column_chars = new char[strResult.length() + 1];
+        strcpy(column_chars, strResult.data());
+    }
+    return column_chars;
+
+}
+
+void BrokerScanner::split_json_line(
+        const Slice& line, std::vector<Slice>* values) {
+
+    Json::Reader reader;
+    Json::Value root;
+    try {
+        if (reader.parse(line.data,line.data+line.size, root)){
+            if(!_column_names.empty()){
+                for (auto column_name: _column_names){
+                    if (!root.isMember(column_name)) {
+                        continue;
+                    }
+                    Json::Value &column_value = root[column_name];
+                    char *col_char_value = convertToChar(column_value);
+                    if(col_char_value != nullptr){
+                        values->emplace_back(col_char_value);
+                    }
+                }
+            }
+        }
+    }catch (...){
+        std::stringstream error_msg;
+        error_msg<<"transform" <<line.data<<" fail";
+        _state->append_error_msg_to_file(std::string(line.data, line.size),
+                                         error_msg.str());
+    }
+
+
+
+}
+
+
+
+    void BrokerScanner::fill_fix_length_string(
         const Slice& value, MemPool* pool,
         char** new_value_p, const int new_value_length) {
     if (new_value_length != 0 && value.size < new_value_length) {
@@ -407,7 +482,12 @@ bool BrokerScanner::line_to_src_tuple(const Slice& line) {
 
     std::vector<Slice> values;
     {
-        split_line(line, &values);
+        if("json"==_data_type){
+            split_json_line(line, &values);
+        } else{
+            split_line(line, &values);
+        }
+
     }
 
     // range of current file
@@ -416,8 +496,9 @@ bool BrokerScanner::line_to_src_tuple(const Slice& line) {
     if (values.size() + columns_from_path.size() < _src_slot_descs.size()) {
         std::stringstream error_msg;
         error_msg << "actual column number is less than schema column number. "
-            << "actual number: " << values.size() << " sep: " << _value_separator << ", "
-            << "schema number: " << _src_slot_descs.size() << "; ";
+                  << "actual number: " << values.size() << " sep: " << _value_separator
+                  << " data type: " << _data_type << " ,schema number: " << _src_slot_descs.size()
+                  << "; ";
         _state->append_error_msg_to_file(std::string(line.data, line.size),
                                          error_msg.str());
         _counter->num_rows_filtered++;
@@ -425,8 +506,9 @@ bool BrokerScanner::line_to_src_tuple(const Slice& line) {
     } else if (values.size() + columns_from_path.size() > _src_slot_descs.size()) {
         std::stringstream error_msg;
         error_msg << "actual column number is more than schema column number. "
-            << "actual number: " << values.size() << " sep: " << _value_separator << ", "
-            << "schema number: " << _src_slot_descs.size() << "; ";
+                  << "actual number: " << values.size() << " sep: " << _value_separator
+                  << " data type: " << _data_type << " ,schema number: " << _src_slot_descs.size()
+                  << "; ";
         _state->append_error_msg_to_file(std::string(line.data, line.size),
                                          error_msg.str());
         _counter->num_rows_filtered++;

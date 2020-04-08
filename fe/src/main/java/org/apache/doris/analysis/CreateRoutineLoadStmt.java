@@ -89,6 +89,7 @@ public class CreateRoutineLoadStmt extends DdlStmt {
     public static final String MAX_BATCH_INTERVAL_SEC_PROPERTY = "max_batch_interval";
     public static final String MAX_BATCH_ROWS_PROPERTY = "max_batch_rows";
     public static final String MAX_BATCH_SIZE_PROPERTY = "max_batch_size";
+    public static final String DATA_TYPE="data_type";
 
     // kafka type properties
     public static final String KAFKA_BROKER_LIST_PROPERTY = "kafka_broker_list";
@@ -109,6 +110,7 @@ public class CreateRoutineLoadStmt extends DdlStmt {
             .add(MAX_BATCH_SIZE_PROPERTY)
             .add(LoadStmt.STRICT_MODE)
             .add(LoadStmt.TIMEZONE)
+            .add(DATA_TYPE)
             .build();
 
     private static final ImmutableSet<String> KAFKA_PROPERTIES_SET = new ImmutableSet.Builder<String>()
@@ -124,6 +126,7 @@ public class CreateRoutineLoadStmt extends DdlStmt {
     private final Map<String, String> jobProperties;
     private final String typeName;
     private final Map<String, String> dataSourceProperties;
+    private String dataType;
 
     // the following variables will be initialized after analyze
     // -1 as unset, the default value will set in RoutineLoadJob
@@ -228,6 +231,15 @@ public class CreateRoutineLoadStmt extends DdlStmt {
         return customKafkaProperties;
     }
 
+    public String getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(String dataType) {
+        this.dataType = dataType;
+    }
+
+
     @Override
     public void analyze(Analyzer analyzer) throws UserException {
         super.analyze(analyzer);
@@ -320,6 +332,8 @@ public class CreateRoutineLoadStmt extends DdlStmt {
         maxBatchSizeBytes = Util.getLongPropertyOrDefault(jobProperties.get(MAX_BATCH_SIZE_PROPERTY),
                 RoutineLoadJob.DEFAULT_MAX_BATCH_SIZE, MAX_BATCH_SIZE_PRED,
                 MAX_BATCH_SIZE_PROPERTY + " should between 100MB and 1GB");
+
+        dataType = jobProperties.get(DATA_TYPE);
 
         strictMode = Util.getBooleanPropertyOrDefault(jobProperties.get(LoadStmt.STRICT_MODE),
                                                       RoutineLoadJob.DEFAULT_STRICT_MODE,

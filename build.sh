@@ -32,6 +32,7 @@ ROOT=`dirname "$0"`
 ROOT=`cd "$ROOT"; pwd`
 
 export DORIS_HOME=${ROOT}
+#export DORIS_THIRDPARTY=${DORIS_HOME}/thirdparty
 
 . ${DORIS_HOME}/env.sh
 

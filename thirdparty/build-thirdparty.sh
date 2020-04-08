@@ -634,6 +634,20 @@ build_croaringbitmap() {
     make -j$PARALLEL && make install
 }
 
+build_jsoncpp(){
+    check_if_source_exist $JSONCPP_SOURCE
+    cd $TP_SOURCE_DIR/$JSONCPP_SOURCE
+    mkdir -p build
+    cd build
+    cmake -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF -DARCHIVE_INSTALL_DIR=. -G "Unix Makefiles" ../
+    make
+    cp -rf ./src/lib_json/libjsoncpp.a $TP_INSTALL_DIR/lib
+    cp -r ../include/json $TP_DIR/installed/include/
+
+
+}
+
+
 build_llvm
 build_libevent
 build_zlib
@@ -661,5 +675,6 @@ build_arrow
 build_s2
 build_bitshuffle
 build_croaringbitmap
+build_jsoncpp
 
 echo "Finihsed to build all thirdparties"

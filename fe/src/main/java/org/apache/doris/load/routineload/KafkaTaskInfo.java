@@ -91,6 +91,7 @@ public class KafkaTaskInfo extends RoutineLoadTaskInfo {
         tKafkaLoadInfo.setProperties(routineLoadJob.getConvertedCustomProperties());
         tRoutineLoadTask.setKafka_load_info(tKafkaLoadInfo);
         tRoutineLoadTask.setType(TLoadSourceType.KAFKA);
+        routineLoadJob.dataType = routineLoadJob.getConvertedCustomProperties().get("data_type");
         tRoutineLoadTask.setParams(rePlan(routineLoadJob));
         tRoutineLoadTask.setMax_interval_s(routineLoadJob.getMaxBatchIntervalS());
         tRoutineLoadTask.setMax_batch_rows(routineLoadJob.getMaxBatchRows());

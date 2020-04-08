@@ -973,7 +973,7 @@ public class Load {
                 }
             }
         }
-
+        List<String> columnList=new ArrayList<>();
         // init slot desc add expr map, also transform hadoop functions
         for (ImportColumnDesc importColumnDesc : columnExprs) {
             // make column name case match with real column name
@@ -996,7 +996,9 @@ public class Load {
                 params.addToSrc_slot_ids(slotDesc.getId().asInt());
                 slotDescByName.put(realColName, slotDesc);
             }
+            columnList.add(columnName);
         }
+        params.setColumn_names(columnList);
         LOG.debug("slotDescByName: {}, exprsByName: {}", slotDescByName, exprsByName);
 
         // analyze all exprs

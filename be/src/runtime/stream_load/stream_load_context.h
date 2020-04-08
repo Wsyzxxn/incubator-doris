@@ -130,6 +130,7 @@ public:
     std::string db;
     std::string table;
     std::string label;
+    std::string data_type;
     // optional
     std::string sub_label;
     double max_filter_ratio = 0.0;

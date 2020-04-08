@@ -222,6 +222,9 @@ set_target_properties(bitshuffle PROPERTIES IMPORTED_LOCATION ${THIRDPARTY_DIR}/
 add_library(roaring STATIC IMPORTED)
 set_target_properties(roaring PROPERTIES IMPORTED_LOCATION ${THIRDPARTY_DIR}/lib/libroaring.a)
 
+add_library(jsoncpp STATIC IMPORTED)
+set_target_properties(jsoncpp PROPERTIES IMPORTED_LOCATION ${THIRDPARTY_DIR}/lib/libjsoncpp.a)
+
 find_program(THRIFT_COMPILER thrift ${CMAKE_SOURCE_DIR}/bin)
 
 # llvm-config
@@ -533,6 +536,7 @@ set(DORIS_DEPENDENCIES
     arrow
     parquet
     ${WL_END_GROUP}
+    jsoncpp
 )
 
 if(WITH_LZO)

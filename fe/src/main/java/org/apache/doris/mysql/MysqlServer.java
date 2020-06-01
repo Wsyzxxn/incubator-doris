@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -92,6 +93,16 @@ public class MysqlServer {
         }
     }
 
+    public boolean ips_context_filters(String mysqlIpsFilter, String clienthost) {
+        for (String ip_filter : mysqlIpsFilter.replaceAll(" ", "").split(",")) {
+            if (ip_filter.equals(clienthost)) {
+                LOG.info("refuse client of request from ip: " + ip_filter);
+                return true;
+            }
+        }
+        return false;
+    }
+
     private class Listener implements Runnable {
         @Override
         public void run() {
@@ -106,6 +117,18 @@ public class MysqlServer {
                     ConnectContext context = new ConnectContext(clientChannel);
                     // Set catalog here.
                     context.setCatalog(Catalog.getInstance());
+
+                    if (context.getSessionVariable().isEnableIpsFilter() && !context.getSessionVariable().getMysqlIpsFilter().isEmpty()) {
+                        SocketAddress sockeraddress = clientChannel.getRemoteAddress();
+                        if (sockeraddress instanceof InetSocketAddress) {
+                            InetSocketAddress address = (InetSocketAddress) sockeraddress;
+                            //ip filter
+                            if (ips_context_filters(context.getSessionVariable().getMysqlIpsFilter(), address.getHostString())) {
+                                continue;
+                            }
+                        }
+                    }
+
                     if (!scheduler.submit(context)) {
                         LOG.warn("Submit one connect request failed. Client=" + clientChannel.toString());
                         // clear up context
@@ -120,7 +143,7 @@ public class MysqlServer {
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e1) {
-                       // Do nothing
+                        // Do nothing
                     }
                     continue;
                 } catch (Throwable e) {
@@ -140,5 +163,5 @@ public class MysqlServer {
     public void setScheduler(ConnectScheduler scheduler) {
         this.scheduler = scheduler;
     }
-    
+
 }

@@ -18,6 +18,7 @@
 package org.apache.doris.qe;
 
 import org.apache.doris.catalog.Catalog;
+import org.apache.doris.common.Config;
 import org.apache.doris.common.FeMetaVersion;
 import org.apache.doris.common.io.Text;
 import org.apache.doris.common.io.Writable;
@@ -36,7 +37,7 @@ import java.lang.reflect.Field;
 
 // System variable
 public class SessionVariable implements Serializable, Writable {
-    
+
     static final Logger LOG = LogManager.getLogger(StmtExecutor.class);
     public static final String EXEC_MEM_LIMIT = "exec_mem_limit";
     public static final String QUERY_TIMEOUT = "query_timeout";
@@ -66,13 +67,15 @@ public class SessionVariable implements Serializable, Writable {
     public static final String NET_BUFFER_LENGTH = "net_buffer_length";
     public static final String CODEGEN_LEVEL = "codegen_level";
     // mem limit can't smaller than bufferpool's default page size
-    public static final int MIN_EXEC_MEM_LIMIT = 2097152;   
+    public static final int MIN_EXEC_MEM_LIMIT = 2097152;
     public static final String BATCH_SIZE = "batch_size";
     public static final String DISABLE_STREAMING_PREAGGREGATIONS = "disable_streaming_preaggregations";
     public static final String DISABLE_COLOCATE_JOIN = "disable_colocate_join";
     public static final String PARALLEL_FRAGMENT_EXEC_INSTANCE_NUM = "parallel_fragment_exec_instance_num";
     public static final String ENABLE_INSERT_STRICT = "enable_insert_strict";
     public static final String ENABLE_RESULT_CACHE = "enable_result_cache";
+    public static final String ENABLE_IPS_FILTER = "enable_ips_filter";
+    public static final String MYSQL_IPS_FILTER = "mysql_ips_filter";
     public static final int MIN_EXEC_INSTANCE_NUM = 1;
     public static final int MAX_EXEC_INSTANCE_NUM = 32;
     // if set to true, some of stmt will be forwarded to master FE to get result
@@ -80,7 +83,7 @@ public class SessionVariable implements Serializable, Writable {
     // user can set instance num after exchange, no need to be equal to nums of before exchange
     public static final String PARALLEL_EXCHANGE_INSTANCE_NUM = "parallel_exchange_instance_num";
     /*
-     * configure the mem limit of load process on BE. 
+     * configure the mem limit of load process on BE.
      * Previously users used exec_mem_limit to set memory limits.
      * To maintain compatibility, the default value of load_mem_limit is 0,
      * which means that the load memory limit is still using exec_mem_limit.
@@ -217,6 +220,12 @@ public class SessionVariable implements Serializable, Writable {
     @VariableMgr.VarAttr(name = LOAD_MEM_LIMIT)
     private long loadMemLimit = 0L;
 
+    @VariableMgr.VarAttr(name = ENABLE_IPS_FILTER)
+    private boolean enableIpsFilter = false;
+
+    @VariableMgr.VarAttr(name = MYSQL_IPS_FILTER)
+    private String mysqlIPSFilter = "";
+
     public long getMaxExecMemByte() {
         return maxExecMemByte;
     }
@@ -239,6 +248,26 @@ public class SessionVariable implements Serializable, Writable {
 
     public long getSqlMode() {
         return sqlMode;
+    }
+
+    public String getMysqlIpsFilter() {
+        return mysqlIPSFilter;
+    }
+
+    public boolean getEnableIpsFilter() {
+        return enableIpsFilter;
+    }
+
+    public boolean isEnableIpsFilter() {
+        return this.enableIpsFilter;
+    }
+
+    public void setEnableIpsFilter(boolean resultenableIpsFilter) {
+        this.enableIpsFilter = resultenableIpsFilter;
+    }
+
+    public void setMysqlIpsFilter(String resultmysqlIpsFilter) {
+        this.mysqlIPSFilter = resultmysqlIpsFilter;
     }
 
     public void setSqlMode(long sqlMode) {
@@ -373,14 +402,17 @@ public class SessionVariable implements Serializable, Writable {
         return exchangeInstanceParallel;
     }
 
-    public boolean getEnableInsertStrict() { return enableInsertStrict; }
+    public boolean getEnableInsertStrict() {
+        return enableInsertStrict;
+    }
 
     public void setEnableInsertStrict(boolean enableInsertStrict) {
         this.enableInsertStrict = enableInsertStrict;
     }
+
     /**
-     *
      * Check if the result cache is enabled for this session. True by default.
+     *
      * @return True for cached-enabled, otherwise false.
      */
     public boolean isEnableResultCache() {
@@ -389,6 +421,7 @@ public class SessionVariable implements Serializable, Writable {
 
     /**
      * Turn on/off result cache for this session.
+     *
      * @param resultCacheEnabledInSession
      */
     public void setEnableResultCache(boolean resultCacheEnabledInSession) {
@@ -513,6 +546,7 @@ public class SessionVariable implements Serializable, Writable {
             readFromJson(in);
         }
     }
+
     private void readFromJson(DataInput in) throws IOException {
         String json = Text.readString(in);
         JSONObject root = new JSONObject(json);
